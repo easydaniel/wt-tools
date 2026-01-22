@@ -1,0 +1,55 @@
+# Example configuration for Node.js/TypeScript projects
+# Copy to .wt-tools.yaml in your repository root
+
+worktree_dir: ".worktrees/{branch}"
+worktree_dir_fallback: "~/.worktrees/{project}/{branch}"
+
+hooks:
+  post_create:
+    - name: "Install npm dependencies"
+      command: "npm install"
+      working_dir: "{path}"
+      timeout: 600
+      on_failure: "abort"
+
+    - name: "Build TypeScript"
+      command: "npm run build"
+      working_dir: "{path}"
+      timeout: 300
+      on_failure: "warn"
+
+    - name: "Copy environment file"
+      command: "cp ../.env.example .env || echo 'No .env.example found'"
+      working_dir: "{path}"
+      on_failure: "warn"
+
+  pre_switch:
+    - name: "Stop development server"
+      command: "pkill -f 'node.*dev' || true"
+      working_dir: "{path}"
+      on_failure: "continue"
+
+    - name: "Save WIP"
+      command: |
+        if [[ -n $(git status -s) ]]; then
+          git add -A
+          git commit -m "WIP: auto-save before switch" || true
+        fi
+      working_dir: "{path}"
+      on_failure: "continue"
+
+  post_delete:
+    - name: "Clean build artifacts"
+      command: "rm -rf dist/ build/ .next/ out/"
+      working_dir: "{path}"
+      on_failure: "continue"
+
+    - name: "Clean node_modules cache"
+      command: "rm -rf node_modules/.cache"
+      working_dir: "{path}"
+      on_failure: "continue"
+
+settings:
+  auto_cleanup: true
+  confirm_delete: true
+  track_remote: true

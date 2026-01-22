@@ -1,0 +1,64 @@
+# Example configuration for Python projects
+# Copy to .wt-tools.yaml in your repository root
+
+worktree_dir: ".worktrees/{branch}"
+worktree_dir_fallback: "~/.worktrees/{project}/{branch}"
+
+hooks:
+  post_create:
+    - name: "Create virtual environment"
+      command: "python -m venv venv"
+      working_dir: "{path}"
+      timeout: 120
+      on_failure: "abort"
+
+    - name: "Install dependencies"
+      command: "source venv/bin/activate && pip install -r requirements.txt"
+      working_dir: "{path}"
+      timeout: 600
+      on_failure: "abort"
+
+    - name: "Install development dependencies"
+      command: "source venv/bin/activate && pip install -r requirements-dev.txt"
+      working_dir: "{path}"
+      timeout: 300
+      on_failure: "warn"
+
+    - name: "Copy environment file"
+      command: "cp ../.env.example .env || echo 'No .env.example found'"
+      working_dir: "{path}"
+      on_failure: "warn"
+
+    - name: "Run database migrations"
+      command: "source venv/bin/activate && python manage.py migrate"
+      working_dir: "{path}"
+      timeout: 300
+      env:
+        DJANGO_SETTINGS_MODULE: "myproject.settings"
+      on_failure: "warn"
+
+  pre_switch:
+    - name: "Save work in progress"
+      command: |
+        if [[ -n $(git status -s) ]]; then
+          git add -A
+          git commit -m "WIP: auto-save $(date +%Y-%m-%d_%H:%M:%S)" || true
+        fi
+      working_dir: "{path}"
+      on_failure: "continue"
+
+  post_delete:
+    - name: "Clean Python cache"
+      command: "find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true"
+      working_dir: "{path}"
+      on_failure: "continue"
+
+    - name: "Remove .pyc files"
+      command: "find . -type f -name '*.pyc' -delete"
+      working_dir: "{path}"
+      on_failure: "continue"
+
+settings:
+  auto_cleanup: true
+  confirm_delete: true
+  track_remote: true

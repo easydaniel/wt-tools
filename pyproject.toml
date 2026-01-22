@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wt-tools"
+version = "0.1.0"
+description = "Git worktree management with configurable hooks"
+readme = "README.md"
+authors = [
+    {name = "easydaniel", email = "tanchien1335@gmail.com"}
+]
+license = {text = "MIT"}
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Version Control :: Git",
+]
+keywords = ["git", "worktree", "workflow", "automation", "cli"]
+
+dependencies = [
+    "click>=8.0.0",
+    "GitPython>=3.1.0",
+    "PyYAML>=6.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "types-PyYAML",
+]
+
+[project.scripts]
+wt = "wt_tools.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/easydaniel/wt-tools"
+Repository = "https://github.com/easydaniel/wt-tools"
+Issues = "https://github.com/easydaniel/wt-tools/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["wt_tools*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py38"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=wt_tools --cov-report=term-missing"

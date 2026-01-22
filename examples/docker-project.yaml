@@ -1,0 +1,63 @@
+# Example configuration for Docker-based projects
+# Copy to .wt-tools.yaml in your repository root
+
+worktree_dir: ".worktrees/{branch}"
+worktree_dir_fallback: "~/.worktrees/{project}/{branch}"
+
+hooks:
+  post_create:
+    - name: "Build Docker images"
+      command: "docker-compose build"
+      working_dir: "{path}"
+      timeout: 1200
+      on_failure: "abort"
+
+    - name: "Start containers"
+      command: "docker-compose up -d"
+      working_dir: "{path}"
+      timeout: 300
+      env:
+        COMPOSE_PROJECT_NAME: "{project}_{branch}"
+      on_failure: "warn"
+
+    - name: "Run database migrations"
+      command: "docker-compose exec -T web python manage.py migrate"
+      working_dir: "{path}"
+      timeout: 300
+      on_failure: "warn"
+
+    - name: "Show running containers"
+      command: "docker-compose ps"
+      working_dir: "{path}"
+      timeout: 30
+      on_failure: "continue"
+
+  pre_switch:
+    - name: "Save WIP changes"
+      command: |
+        if [[ -n $(git status -s) ]]; then
+          git add -A
+          git commit -m "WIP: auto-save before switch" || true
+        fi
+      working_dir: "{path}"
+      on_failure: "continue"
+
+  post_delete:
+    - name: "Stop and remove containers"
+      command: "docker-compose down -v"
+      working_dir: "{path}"
+      timeout: 120
+      env:
+        COMPOSE_PROJECT_NAME: "{project}_{branch}"
+      on_failure: "continue"
+
+    - name: "Remove volumes"
+      command: "docker volume ls -q -f name={project}_{branch} | xargs -r docker volume rm"
+      working_dir: "{path}"
+      timeout: 60
+      on_failure: "continue"
+
+settings:
+  auto_cleanup: true
+  confirm_delete: true
+  track_remote: true
