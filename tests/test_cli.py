@@ -273,3 +273,138 @@ def test_cleanup(
     # Run actual cleanup
     result = runner.invoke(cli, ["cleanup"])
     assert result.exit_code == 0
+
+
+def test_clone(
+    runner: CliRunner, temp_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test clone command via CLI."""
+    # Ensure we start in temp_dir
+    os.chdir(temp_dir)
+
+    try:
+        # Create a source repo to clone from
+        source_repo_dir = temp_dir / "source-repo"
+        source_repo = git.Repo.init(source_repo_dir)
+        source_repo.config_writer().set_value("user", "name", "Test User").release()
+        source_repo.config_writer().set_value("user", "email", "test@example.com").release()
+
+        # Change to source repo to add files
+        os.chdir(source_repo_dir)
+
+        # Create initial commit
+        readme = source_repo_dir / "README.md"
+        readme.write_text("# Test Repo\n")
+        source_repo.index.add(["README.md"])
+        source_repo.index.commit("Initial commit")
+
+        # Change to temp dir for cloning
+        clone_target_dir = temp_dir / "clone-test"
+        clone_target_dir.mkdir()
+        os.chdir(clone_target_dir)
+
+        # Mock Confirm.ask to auto-decline gitignore prompts
+        from rich.prompt import Confirm
+
+        monkeypatch.setattr(Confirm, "ask", lambda *args, **kwargs: False)
+
+        # Clone the repo
+        result = runner.invoke(cli, ["clone", str(source_repo_dir)])
+        assert result.exit_code == 0
+        assert "Setup complete!" in result.output
+
+        # Verify cloned directory exists
+        cloned_dir = clone_target_dir / "source-repo"
+        assert cloned_dir.exists()
+        assert (cloned_dir / ".git").exists()
+        assert (cloned_dir / "README.md").exists()
+        assert (cloned_dir / ".wt-tools.yaml").exists()
+
+    finally:
+        # Go back to a safe directory (project root)
+        os.chdir("/Users/tanchien/Documents/wt-tools")
+
+
+def test_clone_custom_directory(
+    runner: CliRunner, temp_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test clone command with custom directory."""
+    # Ensure we start in temp_dir
+    os.chdir(temp_dir)
+
+    try:
+        # Create a source repo
+        source_repo_dir = temp_dir / "source-repo"
+        source_repo = git.Repo.init(source_repo_dir)
+        source_repo.config_writer().set_value("user", "name", "Test User").release()
+        source_repo.config_writer().set_value("user", "email", "test@example.com").release()
+
+        # Change to source repo to add files
+        os.chdir(source_repo_dir)
+        readme = source_repo_dir / "README.md"
+        readme.write_text("# Test Repo\n")
+        source_repo.index.add(["README.md"])
+        source_repo.index.commit("Initial commit")
+
+        # Change to temp dir
+        clone_target_dir = temp_dir / "clone-test"
+        clone_target_dir.mkdir()
+        os.chdir(clone_target_dir)
+
+        # Mock Confirm.ask
+        from rich.prompt import Confirm
+
+        monkeypatch.setattr(Confirm, "ask", lambda *args, **kwargs: False)
+
+        # Clone with custom directory name
+        result = runner.invoke(cli, ["clone", str(source_repo_dir), "my-custom-name"])
+        assert result.exit_code == 0
+
+        # Verify custom directory exists
+        cloned_dir = clone_target_dir / "my-custom-name"
+        assert cloned_dir.exists()
+        assert (cloned_dir / ".wt-tools.yaml").exists()
+
+    finally:
+        # Go back to a safe directory (project root)
+        os.chdir("/Users/tanchien/Documents/wt-tools")
+
+
+def test_clone_skip_init(
+    runner: CliRunner, temp_dir: Path
+) -> None:
+    """Test clone command with --skip-init flag."""
+    # Ensure we start in temp_dir
+    os.chdir(temp_dir)
+
+    try:
+        # Create a source repo
+        source_repo_dir = temp_dir / "source-repo"
+        source_repo = git.Repo.init(source_repo_dir)
+        source_repo.config_writer().set_value("user", "name", "Test User").release()
+        source_repo.config_writer().set_value("user", "email", "test@example.com").release()
+
+        # Change to source repo to add files
+        os.chdir(source_repo_dir)
+        readme = source_repo_dir / "README.md"
+        readme.write_text("# Test Repo\n")
+        source_repo.index.add(["README.md"])
+        source_repo.index.commit("Initial commit")
+
+        # Change to temp dir
+        clone_target_dir = temp_dir / "clone-test"
+        clone_target_dir.mkdir()
+        os.chdir(clone_target_dir)
+
+        # Clone with --skip-init
+        result = runner.invoke(cli, ["clone", str(source_repo_dir), "--skip-init"])
+        assert result.exit_code == 0
+
+        # Verify no .wt-tools.yaml was created
+        cloned_dir = clone_target_dir / "source-repo"
+        assert cloned_dir.exists()
+        assert not (cloned_dir / ".wt-tools.yaml").exists()
+
+    finally:
+        # Go back to a safe directory (project root)
+        os.chdir("/Users/tanchien/Documents/wt-tools")

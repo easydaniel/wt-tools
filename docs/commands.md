@@ -39,6 +39,51 @@ wt init --global
 
 ---
 
+### wt clone
+
+Clone a repository and initialize wt-tools.
+
+**Usage:**
+```bash
+wt clone REPOSITORY [DIRECTORY] [--skip-init]
+```
+
+**Arguments:**
+- `REPOSITORY`: Git repository URL (https or ssh)
+- `DIRECTORY`: Optional destination directory (defaults to repo name)
+
+**Options:**
+- `--skip-init`: Skip running `wt init` after cloning
+
+**Examples:**
+```bash
+# Clone and initialize
+wt clone https://github.com/user/repo.git
+
+# Clone to specific directory
+wt clone https://github.com/user/repo.git my-project
+
+# Clone with SSH
+wt clone git@github.com:user/repo.git
+
+# Clone without auto-initialization
+wt clone https://github.com/user/repo.git --skip-init
+```
+
+**What it does:**
+1. Clones the repository using `git clone`
+2. Changes into the cloned directory
+3. Runs `wt init` to create `.wt-tools.yaml` (unless --skip-init)
+4. Prompts to add patterns to `.gitignore`
+5. Shows next steps
+
+**Benefits:**
+- Quick setup for new repositories
+- Consistent initialization across projects
+- No need to remember to run `wt init`
+
+---
+
 ### wt create
 
 Create a new worktree for a branch.

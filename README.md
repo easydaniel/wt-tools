@@ -23,6 +23,8 @@ pip install wt-tools
 
 ## Quick Start
 
+### Option 1: Existing Repository
+
 1. Initialize wt-tools in your git repository:
 
 ```bash
@@ -30,7 +32,18 @@ cd /path/to/your/repo
 wt init
 ```
 
-2. Create a new worktree:
+### Option 2: Clone New Repository
+
+Clone a repository with wt-tools already configured:
+
+```bash
+wt clone https://github.com/user/repo.git
+cd repo
+```
+
+### Working with Worktrees
+
+1. Create a new worktree:
 
 ```bash
 wt create feature/new-feature

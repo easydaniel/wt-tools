@@ -92,6 +92,100 @@ def init(global_: bool) -> None:
 
 
 @cli.command()
+@click.argument("repository")
+@click.argument("directory", required=False)
+@click.option("--skip-init", is_flag=True, help="Skip running wt init after clone")
+def clone(repository: str, directory: str, skip_init: bool) -> None:
+    """Clone a repository and initialize wt-tools.
+
+    Clones a git repository and automatically sets up wt-tools configuration.
+
+    Examples:
+
+        wt clone https://github.com/user/repo.git
+
+        wt clone https://github.com/user/repo.git my-project
+
+        wt clone git@github.com:user/repo.git --skip-init
+    """
+    import subprocess
+
+    try:
+        # Build git clone command
+        clone_cmd = ["git", "clone", repository]
+        if directory:
+            clone_cmd.append(directory)
+
+        console.print(f"[cyan]Cloning repository...[/cyan]")
+
+        # Clone the repository
+        result = subprocess.run(
+            clone_cmd,
+            capture_output=True,
+            text=True,
+        )
+
+        if result.returncode != 0:
+            console.print(f"[red]Error cloning repository:[/red]\n{result.stderr}")
+            sys.exit(1)
+
+        # Determine the directory name
+        if directory:
+            target_dir = Path(directory)
+        else:
+            # Extract repo name from URL
+            repo_name = repository.rstrip("/").split("/")[-1]
+            if repo_name.endswith(".git"):
+                repo_name = repo_name[:-4]
+            target_dir = Path.cwd() / repo_name
+
+        console.print(f"[green]✓ Repository cloned to {target_dir}[/green]")
+
+        # Change to the cloned directory and run init
+        if not skip_init:
+            original_dir = Path.cwd()
+            try:
+                import os
+                os.chdir(target_dir)
+
+                console.print(f"\n[cyan]Initializing wt-tools...[/cyan]")
+
+                # Create project config
+                project_config_path = Path.cwd() / ".wt-tools.yaml"
+                if not project_config_path.exists():
+                    # Prompt to add to .gitignore
+                    patterns_added = ensure_patterns_ignored(
+                        [".worktrees/", ".wt-tools.yaml"], "wt-tools configuration"
+                    )
+
+                    config_content = create_default_config()
+                    save_config(project_config_path, config_content)
+                    console.print(
+                        f"[green]✓ Created wt-tools config[/green]"
+                    )
+                else:
+                    console.print(
+                        f"[yellow]Configuration already exists, skipping init[/yellow]"
+                    )
+
+            finally:
+                os.chdir(original_dir)
+
+        console.print(f"\n[bold green]Setup complete![/bold green]")
+        console.print(f"\n[cyan]Next steps:[/cyan]")
+        console.print(f"  cd {target_dir}")
+        if skip_init:
+            console.print(f"  wt init  # Initialize wt-tools")
+        else:
+            console.print(f"  # Edit .wt-tools.yaml to customize hooks")
+        console.print(f"  wt create feature/your-feature")
+
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        sys.exit(1)
+
+
+@cli.command()
 @click.argument("branch")
 @click.option("--path", help="Custom worktree path (overrides config)")
 @click.option("--skip-hooks", is_flag=True, help="Skip running post_create hooks")
