@@ -1,5 +1,10 @@
 # wt-tools
 
+[![PyPI version](https://badge.fury.io/py/wt-tools.svg)](https://badge.fury.io/py/wt-tools)
+[![Tests](https://github.com/easydaniel/wt-tools/actions/workflows/test.yml/badge.svg)](https://github.com/easydaniel/wt-tools/actions/workflows/test.yml)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Git worktree management with configurable hooks.
 
 ## Features
